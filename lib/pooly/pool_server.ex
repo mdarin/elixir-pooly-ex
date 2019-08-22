@@ -145,6 +145,9 @@ defmodule Pooly.PoolServer do
   end
 
   def handle_info(:start_worker_supervisor, state = %{pool_sup: pool_sup, name: name, mfa: mfa, size: size}) do
+    IO.puts "::name -> #{inspect name}"
+    IO.puts "::mfa -> #{inspect mfa}"
+
     {:ok, worker_sup} = Supervisor.start_child(pool_sup, supervisor_spec(name, mfa))
     workers = prepopulate(size, worker_sup)
     {:noreply, %{state | worker_sup: worker_sup, workers: workers}}

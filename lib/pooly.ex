@@ -14,9 +14,9 @@ defmodule Pooly do
   def start(_type, _args)  do
     IO.puts "Application #{inspect __MODULE__} starting on node #{inspect :erlang.node()}"
     pools_config = [
-     [name: "Pool1", mfa: {SampleWorker, :start_link, []}, size: 2],
-     [name: "Pool2", mfa: {SampleWorker, :start_link, []}, size: 3],
-     [name: "Pool3", mfa: {SampleWorker, :start_link, []}, size: 4]
+    # [name: "Pool1", mfa: {SampleWorker, :start_link, []}, size: 2],
+    # [name: "Pool2", mfa: {SampleWorker, :start_link, []}, size: 3],
+    # [name: "Pool3", mfa: {SampleWorker, :start_link, []}, size: 4]
     ]
    
     start_pools(pools_config)
