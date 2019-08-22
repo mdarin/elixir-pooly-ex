@@ -8,14 +8,18 @@ defmodule Pooly.Supervisor do
   """
   #@spec спецификация для экспортируемых функций и для ответственных местечек
   def start_link(pool_config) do
-    Supervisor.start_link(__MODULE__, pool_config)
+    Supervisor.start_link(__MODULE__, pool_config, name: __MODULE__)
   end
 
   ## callbacks
 
- def init(pool_config) do
+  @doc """
+  назначение функции
+  """
+  def init(pool_config) do
    children = [
-     worker(Pooly.Server, [self, pool_config])
+     supervisor(Pooly.PoolsSupervisor, []),
+     worker(Pooly.PoolServer, [self(), pool_config])
    ]
 
    opts = [strategy: :one_for_all]
