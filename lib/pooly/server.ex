@@ -7,7 +7,13 @@ defmodule Pooly.Server do
   """
   #@spec ...
   defmodule State do
-    defstruct sup: nil, worker_sup: nil, workers: nil, size: nil, woker: nil, mfa: nil
+    defstruct sup: nil,
+      worker_sup: nil,
+      workers: nil,
+      size: nil,
+      woker: nil, 
+      mfa: nil,
+      monitors: nil
   end
 
   #defstruct sup: nil, worker_sup: nil, workers: nil, size: nil, woker: nil, mfa: nil
@@ -15,22 +21,47 @@ defmodule Pooly.Server do
   ## API
 
   @doc """
-  Struct that maintains the state of the server
+  назначение фукнции
   """
-  #@spec ...
+  #@spec спецификация 
   def start_link(sup, pool_config) do
     GenServer.start_link(__MODULE__, [sup, pool_config], name: __MODULE__)
   end
+
+  @doc """
+  назначение фукнции
+  """
+  #@spec спецификация 
+  def checkout() do
+    GenServer.call(__MODULE__, :checkout)
+  end
+
+  @doc """
+  назначение фукнции
+  """
+  #@spec спецификация 
+  def checkin(worker_pid) do
+    GenServer.call(__MODULE__, {:checkin,worker_pid})
+  end
+
+  @doc """
+  назначение фукнции
+  """
+  #@spec спецификация 
+  def status() do
+    GenServer.call(__MODULE__, :status)
+  end
+
 
 
   ## Callbacks
   
   @doc """
-  Struct that maintains the state of the server
   """
   #@spec ...
   def init([sup, pool_config]) when is_pid(sup) do
-    init(pool_config, %State{sup: sup})
+    monitors = :ets.new(:monitors, [:private])
+    init(pool_config, %State{sup: sup, monitors: monitors})
   end
   def init([{:mfa, mfa}|rest], state) do
     init(rest, %{state | mfa: mfa})
@@ -42,14 +73,45 @@ defmodule Pooly.Server do
     init(rest, state)
   end
   def init([], state) do
-    send(self, :start_worker_supervisor)
+    send(self(), :start_worker_supervisor)
     {:ok, state}
   end
 
   @doc """
-  Struct that maintains the state of the server
+  назначение фукнции
   """
-  #@spec ...
+  #@spec спецификация 
+  def handle_call(:checkout, {from_pid, _ref}, %{workers: workers, monitors: monitors} = state) do
+    case workers do
+      [worker|rest] ->
+        ref = Process.monitor(from_pid)
+        true = :ets.insert(monitors, {workers, ref})
+        {:reply, worker, %{state | workers: rest}}
+      [] ->
+        {:reply, :noproc, state}
+    end    
+  end
+ 
+  def handle_call({:checkin, worker}, %{workers: workers, monitors: monitors} = state) do
+    case :ets.lookup(monitors, worker) do
+      [{pid, ref}] ->
+        true = Process.demonitor(ref)
+        true = :ets.delete(monitors, pid)
+	{:noreply, %{state | workers: [pid|workers]}}
+      [] ->
+        {:noreply, state}
+    end
+  end
+
+  def handle_call(:status, _from, %{workers: workers, monitors: monitors} = state) do
+    {:reply, {length(workers), :ets.info(monitors, :size)}, state}
+  end
+
+
+  @doc """
+  назначение функции
+  """
+  #@spec спецификация функции 
   def handle_info(:start_worker_supervisor, state = %{sup: sup, mfa: mfa, size: size}) do
     {:ok, worker_sup} = Supervisor.start_child(sup, supervisor_spec(mfa))
     workers = prepopulate(size, worker_sup)
@@ -70,7 +132,7 @@ defmodule Pooly.Server do
 
   @doc """
   """
-  #-spec ...
+  #@spec ...
   defp prepopulate(size, sup) do
     prepopulate(size, sup, [])
   end
@@ -84,7 +146,7 @@ defmodule Pooly.Server do
   
   @doc """
   """
-  #-spec ...
+  #@spec ...
   defp new_worker(sup) do
     {:ok, worker} = Supervisor.start_child(sup, [[]])
     worker

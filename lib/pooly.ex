@@ -12,6 +12,7 @@ defmodule Pooly do
   """
   #spec ... указать спецификацию функции
   def start(_type, _args)  do
+    IO.puts "Application #{inspect __MODULE__} starting on node #{inspect :erlang.node()}"
     pool_config = [mfa: {SampleWorker, :start_link, []}, size: 5]
     start_pool(pool_config)
   end

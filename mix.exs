@@ -15,7 +15,7 @@ defmodule Pooly.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger,:edoc],
       mod: {Pooly, []} # Starts the Pooly application
     ]
   end
